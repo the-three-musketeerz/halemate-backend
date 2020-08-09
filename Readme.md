@@ -5,6 +5,7 @@
   - Python 3
   - pip
   - MySql
+  - default-libmysqlclient-dev
 
 - Clone this repository.
 

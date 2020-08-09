@@ -1,0 +1,9 @@
+# Django
+*.pyc
+__pycache__
+
+# Environments
+.env
+
+# VS Code 
+.vscode

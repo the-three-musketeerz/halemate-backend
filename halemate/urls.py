@@ -12,6 +12,7 @@ router.register(r'trusted_contact', views.TrustedContactViewSet)
 
 urlpatterns = [
     path('',include(router.urls)),
+    path('signup/', views.SignupView.as_view(), name = 'signup'),
     path('login/',views.LoginView.as_view(), name='knox_login' ),
     path('logout/', knox_views.LogoutView.as_view(), name='knox_logout'),
 ]

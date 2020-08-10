@@ -88,7 +88,9 @@ class Appointment(models.Model):
     doctor = models.ForeignKey(
         Doctor,
         on_delete = models.CASCADE,
-        related_name = 'doctor_appointments'
+        related_name = 'doctor_appointments',
+        null = True,
+        blank = True,
     )
     reason = models.TextField(blank = True)
     appointment_made_time = models.DateTimeField(auto_now = True)

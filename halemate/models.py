@@ -49,13 +49,57 @@ class User(AbstractUser):
     name = models.CharField(max_length = 180)
     phoneNumber = models.CharField(max_length = 15, unique = True)
     medical_history = models.TextField(blank = True)
-    registered_as = models.CharField(max_length = 1, choices = register_choices, default = USER)
+    registered_as = models.CharField(
+        max_length = 1, 
+        choices = register_choices, 
+        default = USER
+        )
     is_verified = models.BooleanField(default = False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-    
+
     objects = CustomUserManager()
 
     def __str__(self):
         return self.email
+
+class Doctor(models.Model):
+    name = models.CharField(max_length = 180)
+    hospital = models.ManyToManyField(User, related_name = 'doctors')
+    time_start = models.TimeField(null = True)
+    time_end = models.TimeField(null = True)
+    specialization = models.CharField(max_length = 100)
+    phoneNumber = models.CharField(max_length = 15, unique = True)
+
+
+class Appointment(models.Model):
+    user = models.ForeignKey(
+        User, 
+        on_delete = models.CASCADE, 
+        related_name='appointments'
+        )
+    patient_name = models.CharField(max_length = 180)
+    hospital = models.ForeignKey(
+        User, 
+        on_delete = models.CASCADE, 
+        related_name='hospital_appointments'
+        )
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete = models.CASCADE,
+        related_name = 'doctor_appointments'
+    )
+    reason = models.TextField(blank = True)
+    appointment_made_time = models.DateTimeField(auto_now = True)
+    appointment_time = models.DateTimeField(null = True)
+    status = models.CharField(max_length = 20, blank = True)
+
+class TrustedContact(models.Model):
+    user = models.ForeignKey(
+        User, 
+        on_delete = models.CASCADE, 
+        related_name='trusted_contacts'
+        )
+    trusted_name = models.CharField(max_length = 180)
+    trusted_phone = models.CharField(max_length = 15, unique = True)

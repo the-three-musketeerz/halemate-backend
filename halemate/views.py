@@ -2,6 +2,11 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from .models import *
 from .serializers import *
+from django.contrib.auth import login
+
+from rest_framework import permissions
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from knox.views import LoginView as KnoxLoginView
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
@@ -40,3 +45,16 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 class TrustedContactViewSet(viewsets.ModelViewSet):
     queryset = TrustedContact.objects.all()
     serializer_class = TrustedContactSerializer
+
+######################################################
+# Authentication
+
+class LoginView(KnoxLoginView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginView, self).post(request, format=None)

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'knox',
     'corsheaders',
 ]
 
@@ -89,6 +90,10 @@ DATABASES = {
 # Authentication
 
 AUTH_USER_MODEL = 'halemate.User'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+}
 
 
 # Password validation

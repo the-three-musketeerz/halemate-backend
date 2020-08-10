@@ -31,6 +31,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
 
+    def get_serializer_class(self):
+        serializer_class = self.serializer_class
+        if self.request.method == 'GET':
+            serializer_class = AppointmentViewSerializer
+        return serializer_class
+
 class TrustedContactViewSet(viewsets.ModelViewSet):
     queryset = TrustedContact.objects.all()
     serializer_class = TrustedContactSerializer

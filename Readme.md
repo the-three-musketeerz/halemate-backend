@@ -7,6 +7,12 @@
   - MySql
   - default-libmysqlclient-dev
 
+- Install the following for Knox setup
+```
+sudo apt-get install build-essential libssl-dev libffi-dev python3-dev python-dev
+
+```
+
 - Clone this repository.
 
 - Set up a virtual environment.

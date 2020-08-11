@@ -4,7 +4,9 @@ from rest_framework.views import APIView
 from .models import *
 from .serializers import *
 from django.contrib.auth import login
-
+import requests
+import json
+from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework.exceptions import ParseError
@@ -75,8 +77,13 @@ class SignupView(APIView):
             phoneNumber = request.data['phoneNumber']
             registered_as = request.data['registered_as']
             medical_history = ''
+            is_verified = False
             try:
                 medical_history = request.data['medical_history']
+            except:
+                pass
+            try:
+                is_verified = request.data['is_verified']
             except:
                 pass
             try:
@@ -96,6 +103,7 @@ class SignupView(APIView):
                 'phoneNumber': phoneNumber,
                 'registered_as': registered_as,
                 'medical_history': medical_history,
+                'is_verified': is_verified
             }
             user_serializer = UserSerializer(data = user_obj)
             user_serializer.is_valid(raise_exception=True)
@@ -106,10 +114,20 @@ class SignupView(APIView):
                 name = user_data['name'],
                 phoneNumber = user_data['phoneNumber'],
                 registered_as = user_data['registered_as'],
-                medical_history = user_data['medical_history']
+                medical_history = user_data['medical_history'],
+                is_verified = user_data['is_verified']
             )
-            serializer = UserSerializer(user)
-            return Response(data = serializer.data)
+            if(is_verified == False):
+                serializer = UserSerializer(user)
+                return Response(data = serializer.data)
+            else:
+                login_data = {'username':email, 'password':password}
+                login_response = requests.post('http://localhost:8000'+reverse('knox_login'), data = login_data)
+                if login_response.status_code == 200:
+                    login_response = login_response.json()
+                    return Response(login_response)
+                else:
+                    return Response(data = {"detail":"Unable to login"}, status = login_response.status_code)
 
         except:
             raise ParseError

@@ -9,6 +9,7 @@ import json
 from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework import permissions
+from .permissions import *
 from rest_framework.decorators import permission_classes
 from rest_framework.exceptions import ParseError
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -20,6 +21,9 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated,]
 
+    def get_queryset(self):
+        return User.objects.filter(id = self.request.user.id).filter(registered_as = 'U')
+
     def get_serializer_class(self):
         serializer_class = self.serializer_class
         if self.request.method == 'GET':
@@ -29,7 +33,26 @@ class UserViewSet(viewsets.ModelViewSet):
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'H')
     serializer_class = HospitalSerializer
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, IsUserOrAdminOrReadOnly]
+
+    def list(self, request, *args, **kwargs):
+        queryset = User.objects.filter(registered_as = 'H')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = HospitalShortSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = HospitalShortSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        ser_data = serializer.data
+        if instance.id == request.user.id:
+            return Response(ser_data)
+        else:
+            ser_data.pop('hospital_appointments')
+            return Response(ser_data)
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -40,12 +63,17 @@ class HospitalViewSet(viewsets.ModelViewSet):
 class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, hasDoctorPermission]
 
 class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated,]
+
+    def get_queryset(self):
+        if self.request.user.registered_as == 'H':
+            return Appointment.objects.filter(hospital = self.request.user)
+        if self.request.user.registered_as == 'U':
+            return Appointment.objects.filter(user = self.request.user)
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -56,10 +84,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 class TrustedContactViewSet(viewsets.ModelViewSet):
     queryset = TrustedContact.objects.all()
     serializer_class = TrustedContactSerializer
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, ]
+
+    def get_queryset(self):
+        return TrustedContact.objects.filter(user = self.request.user).filter(registered_as = 'U')
 
 class WhoAmIViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, ReadOnly]
 
     def get_queryset(self):
         queryset = User.objects.filter(id = self.request.user.id)

@@ -66,7 +66,7 @@ class User(AbstractUser):
 
 class Doctor(models.Model):
     name = models.CharField(max_length = 180)
-    hospital = models.ManyToManyField(User, related_name = 'doctors')
+    hospital = models.ManyToManyField(User, related_name = 'doctors', blank = True)
     time_start = models.TimeField(null = True)
     time_end = models.TimeField(null = True)
     specialization = models.CharField(max_length = 100)
@@ -89,9 +89,7 @@ class Appointment(models.Model):
     doctor = models.ForeignKey(
         Doctor,
         on_delete = models.CASCADE,
-        related_name = 'doctor_appointments',
-        null = True,
-        blank = True,
+        related_name = 'doctor_appointments'
     )
     reason = models.TextField(blank = True)
     appointment_made_time = models.DateTimeField(auto_now = True)

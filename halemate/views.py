@@ -87,7 +87,7 @@ class TrustedContactViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, ]
 
     def get_queryset(self):
-        return TrustedContact.objects.filter(user = self.request.user).filter(registered_as = 'U')
+        return TrustedContact.objects.filter(user = self.request.user)
 
 class WhoAmIViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, ReadOnly]

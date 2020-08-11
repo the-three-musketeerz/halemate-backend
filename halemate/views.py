@@ -9,6 +9,7 @@ import json
 from django.urls import reverse
 from rest_framework.response import Response
 from rest_framework import permissions
+from rest_framework.decorators import permission_classes
 from rest_framework.exceptions import ParseError
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
@@ -17,6 +18,7 @@ from knox.auth import TokenAuthentication
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
     serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated,]
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -27,6 +29,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'H')
     serializer_class = HospitalSerializer
+    permission_classes = [permissions.IsAuthenticated,]
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -37,10 +40,12 @@ class HospitalViewSet(viewsets.ModelViewSet):
 class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
+    permission_classes = [permissions.IsAuthenticated,]
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated,]
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -51,6 +56,20 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 class TrustedContactViewSet(viewsets.ModelViewSet):
     queryset = TrustedContact.objects.all()
     serializer_class = TrustedContactSerializer
+    permission_classes = [permissions.IsAuthenticated,]
+
+class WhoAmIViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated,]
+
+    def get_queryset(self):
+        queryset = User.objects.filter(id = self.request.user.id)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.user.registered_as == 'H':
+            return HospitalViewSerializer
+        elif self.request.user.registered_as == 'U':
+            return UserViewSerializer
 
 ######################################################
 # Authentication

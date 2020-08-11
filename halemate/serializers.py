@@ -38,6 +38,11 @@ class AppointmentViewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AppointmentSerializer(serializers.ModelSerializer):
+
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        return super().create(validated_data)
+
     class Meta:
         model = Appointment
         fields = '__all__'

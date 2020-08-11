@@ -77,7 +77,8 @@ class Appointment(models.Model):
     user = models.ForeignKey(
         User, 
         on_delete = models.CASCADE, 
-        related_name='appointments'
+        related_name='appointments',
+        blank = True
         )
     patient_name = models.CharField(max_length = 180)
     hospital = models.ForeignKey(

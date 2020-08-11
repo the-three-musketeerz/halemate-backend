@@ -35,13 +35,13 @@ class DoctorSerializer(serializers.ModelSerializer):
         model = Doctor
         fields = '__all__'
 
-# class AppointmentViewSerializer(serializers.ModelSerializer):
-#     user = UserShortSerializer(read_only = True)
-#     hospital = HospitalShortSerializer(read_only = True)
-#     doctor = DoctorShortSerializer(read_only = True)
-#     class Meta:
-#         model = Appointment
-#         fields = '__all__'
+class AppointmentViewSerializer(serializers.ModelSerializer):
+    user = UserShortSerializer(read_only = True)
+    hospital = HospitalShortSerializer(read_only = True)
+    doctor = DoctorShortSerializer(read_only = True)
+    class Meta:
+        model = Appointment
+        fields = '__all__'
 
 class AppointmentSerializer(serializers.ModelSerializer):
 

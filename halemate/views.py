@@ -28,6 +28,8 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer_class = self.serializer_class
         if self.request.method == 'GET':
             serializer_class = UserViewSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = UserUpdateSerializer
         return serializer_class
 
 class HospitalViewSet(viewsets.ModelViewSet):
@@ -58,6 +60,8 @@ class HospitalViewSet(viewsets.ModelViewSet):
         serializer_class = self.serializer_class
         if self.request.method == 'GET':
             serializer_class = HospitalViewSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = UserUpdateSerializer
         return serializer_class
 
 class DoctorViewSet(viewsets.ModelViewSet):
@@ -79,6 +83,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         serializer_class = self.serializer_class
         if self.request.method == 'GET':
             serializer_class = AppointmentViewSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = AppointmentUpdateSerializer
         return serializer_class
 
 class TrustedContactViewSet(viewsets.ModelViewSet):
@@ -179,5 +185,23 @@ class SignupView(APIView):
                 else:
                     return Response(data = {"detail":"Unable to login"}, status = login_response.status_code)
 
+        except:
+            raise ParseError
+
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated,]
+
+    def post(self, request, format = None):
+
+        try:
+            old_pass = request.data['old_password']
+            new_pass = request.data['new_password']
+            usr = request.user
+            if usr.check_password(old_pass):
+                usr.set_password(new_pass)
+                usr.save()
+                return Response(data = {"detail":"password changed successfully"})
+            else:
+                return Response(data = {"detail":"old password did not match"}, status = 401)
         except:
             raise ParseError

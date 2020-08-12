@@ -16,6 +16,13 @@ class UserShortSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'name', 'email', 'phoneNumber']
 
+# only name and medical history field is editable
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'medical_history']
+        read_only_fields = [id,]
+
 class HospitalShortSerializer(serializers.ModelSerializer):
     # doctors = DoctorShortSerializer(many = True, read_only = True)
     class Meta:
@@ -54,6 +61,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = '__all__'
+
+class AppointmentUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Appointment
+        fields = '__all__'
+        read_only_fields = ['user', 'patient_name', 'hospital', 'doctor', 'reason']
 
 class UserViewSerializer(serializers.ModelSerializer):
     class Meta:

@@ -71,7 +71,7 @@ class DoctorViewSet(viewsets.ModelViewSet):
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentSerializer
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, hasAppointmentPermission]
 
     def get_queryset(self):
         if self.request.user.registered_as == 'H':

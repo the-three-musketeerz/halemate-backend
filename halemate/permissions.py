@@ -51,3 +51,27 @@ class hasDoctorPermission(permissions.BasePermission):
             return True
         
         return False
+
+class hasAppointmentPermission(permissions.BasePermission):
+    """
+    Custom permission to allow only the hospital to edit the appointment status and timing
+    """
+
+    def has_object_permission(self, request, view, obj):
+
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        if request.method == 'DELETE' and obj.status != 'P':
+            return False
+
+        if request.user.registered_as == 'U':
+            if request.method == 'DELETE':
+                return True
+            else:
+                return False
+
+        if (request.user.is_superuser) or (request.user == obj.hospital):
+            return True
+
+        return False

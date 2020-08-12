@@ -94,7 +94,7 @@ class Appointment(models.Model):
     reason = models.TextField(blank = True)
     appointment_made_time = models.DateTimeField(auto_now = True)
     appointment_time = models.DateTimeField(null = True)
-    status = models.CharField(max_length = 20, blank = True)
+    status = models.CharField(max_length = 20, default = 'P')
 
 class TrustedContact(models.Model):
     user = models.ForeignKey(

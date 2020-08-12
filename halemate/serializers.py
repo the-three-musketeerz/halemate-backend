@@ -56,6 +56,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
         validated_data['user'] = self.context['request'].user
         if self.context['request'].user.registered_as == 'H':
             validated_data['hospital'] = self.context['request'].user
+        else:
+            validated_data['status'] = 'P'
+            validated_data['appointment_time'] = None
         return super().create(validated_data)
 
     class Meta:

@@ -45,6 +45,11 @@ DATABASE_PASSWORD=mysql-database-password
 python manage.py migrate
 ```
 
+- Start a Redis server on port 6379 using the following command:
+```
+docker run -p 6379:6379 -d redis:5
+```
+
 - Start the backend server:
 ```
 python mange.py runserver

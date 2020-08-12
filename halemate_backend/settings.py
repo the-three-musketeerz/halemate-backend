@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'channels',
     'knox',
     'corsheaders',
 ]
@@ -75,7 +76,15 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'halemate_backend.wsgi.application'
-
+ASGI_APPLICATION = "halemate_backend.routing.application"
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases

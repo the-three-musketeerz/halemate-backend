@@ -13,8 +13,11 @@ from .permissions import *
 from rest_framework.decorators import permission_classes
 from rest_framework.exceptions import ParseError
 from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework import status
 from knox.views import LoginView as KnoxLoginView
 from knox.auth import TokenAuthentication
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
@@ -86,6 +89,30 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         if self.request.method == 'PUT' or self.request.method == 'PATCH':
             serializer_class = AppointmentUpdateSerializer
         return serializer_class
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        try:
+            layer = get_channel_layer()
+            message = {
+                'type':200,
+                'message':"New appointment",
+                "appointment_id":str(serializer.data['id'])
+            }
+            room_group_name = 'hospital_'+str(serializer.data['hospital'])
+            async_to_sync(layer.group_send)(
+                room_group_name,
+                {
+                    'type': 'notify',
+                    'message': json.dumps(message)
+                }
+            )
+        except:
+            pass
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class TrustedContactViewSet(viewsets.ModelViewSet):
     queryset = TrustedContact.objects.all()

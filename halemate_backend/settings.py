@@ -4,11 +4,13 @@ Django settings for halemate_backend project.
 """
 
 from pathlib import Path
+from datetime import timedelta
 import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
+# Read environment variables
 env = environ.Env()
 environ.Env.read_env()
 
@@ -95,6 +97,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
 }
 
+# knox settings
+REST_KNOX = {
+  'TOKEN_TTL': timedelta(hours=24),
+  'TOKEN_LIMIT_PER_USER': None,
+  'AUTO_REFRESH': True,
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -120,7 +128,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE =  'Asia/Kolkata'
 
 USE_I18N = True
 

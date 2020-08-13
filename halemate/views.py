@@ -19,11 +19,28 @@ from knox.auth import TokenAuthentication
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from fcm_django.models import FCMDevice
+from django.core.mail import send_mail
+from halemate_backend.settings import EMAIL_HOST_USER
+import math, random, hashlib
+from django.utils import timezone
+
+# Function to generate OTP
+def generateOTP() : 
+   
+    string = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    OTP = "" 
+    length = len(string) 
+    for i in range(6) : 
+        OTP += string[math.floor(random.random() * length)] 
+  
+    return OTP 
+
+###############################################################
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, isVerified]
 
     def get_queryset(self):
         return User.objects.filter(id = self.request.user.id).filter(registered_as = 'U')
@@ -39,7 +56,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'H')
     serializer_class = HospitalSerializer
-    permission_classes = [permissions.IsAuthenticated, IsUserOrAdminOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, IsUserOrAdminOrReadOnly, isVerified]
 
     def list(self, request, *args, **kwargs):
         queryset = User.objects.filter(registered_as = 'H')
@@ -71,11 +88,11 @@ class HospitalViewSet(viewsets.ModelViewSet):
 class DoctorViewSet(viewsets.ModelViewSet):
     queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
-    permission_classes = [permissions.IsAuthenticated, hasDoctorPermission]
+    permission_classes = [permissions.IsAuthenticated, hasDoctorPermission, isVerified]
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentSerializer
-    permission_classes = [permissions.IsAuthenticated, hasAppointmentPermission]
+    permission_classes = [permissions.IsAuthenticated, hasAppointmentPermission, isVerified]
 
     def get_queryset(self):
         if self.request.user.registered_as == 'H':
@@ -116,15 +133,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 class TrustedContactViewSet(viewsets.ModelViewSet):
-    queryset = TrustedContact.objects.all()
     serializer_class = TrustedContactSerializer
-    permission_classes = [permissions.IsAuthenticated, ]
+    permission_classes = [permissions.IsAuthenticated, isVerified, isUser]
 
     def get_queryset(self):
         return TrustedContact.objects.filter(user = self.request.user)
 
 class WhoAmIViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated, ReadOnly]
+    permission_classes = [permissions.IsAuthenticated, ReadOnly, isVerified]
 
     def get_queryset(self):
         queryset = User.objects.filter(id = self.request.user.id)
@@ -217,7 +233,7 @@ class SignupView(APIView):
             raise ParseError
 
 class ChangePasswordView(APIView):
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, isVerified]
 
     def post(self, request, format = None):
 
@@ -234,11 +250,70 @@ class ChangePasswordView(APIView):
         except:
             raise ParseError
 
+class ForgotPasswordView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format = None):
+
+        try:
+            email = request.data['email']
+            try:
+                usr = User.objects.get(email = email)
+                OTP = generateOTP()
+                msg = 'Your OTP for password change is '+OTP+' .This OTP is valid for 10 minutes.'
+                send_mail(
+                    'Halemate password change OTP',
+                    msg,
+                    EMAIL_HOST_USER,
+                    [email],
+                    fail_silently=False
+                )
+                OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+                p = PasswordReset(user = usr, OTP = OTP_hash)
+                p.save()
+                return Response(data={"status":"OTP sent successfully","email":email}, status=200)
+            except User.DoesNotExist:
+                return Response(data={"detail":"Email-id does not exist"}, status=409)
+        except:
+            raise ParseError
+
+class ResetPasswordView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format = None):
+
+        try:
+            email = request.data['email']
+            OTP = request.data['OTP']
+            new_password = request.data['new_password']
+            usr = User.objects.get(email = email)
+            OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+            pswrdrst = PasswordReset.objects.filter(user = usr).first()
+            if pswrdrst.num_attempts > 0 and pswrdrst.expiry > timezone.now():
+                if OTP_hash == pswrdrst.OTP:
+                    usr.set_password(new_password)
+                    usr.save()
+                    pswrdrst.delete()
+                    return Response(data={"detail":"success"}, status=200)
+                else:
+                    pswrdrst.num_attempts -= 1
+                    pswrdrst.save()
+                    if pswrdrst.num_attempts == 0:
+                        return Response(data={"detail":"No. of invalid attempts exceeded","num_attemps":0}, status=409)
+                        pswrdrst.delete()
+                    else:
+                        return Response(data={"detail":"Invalid OTP","num_attemps":pswrdrst.num_attempts}, status=409)
+            else:
+                return Response(data={"detail":"OTP Expired","num_attemps":0}, status=409)
+                pswrdrst.delete()
+        except:
+            raise ParseError
+
 ##########################################################
 # Alert + FCM
 
 class RegisterDeviceView(APIView):
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, isVerified]
 
     def post(self, request, format = None):
 
@@ -254,14 +329,14 @@ class RegisterDeviceView(APIView):
                 fcm_device = FCMDevice.objects.get(registration_id = registration_id)
                 raise ParseError
             except:
-                fcm_device = FCMDevice(registration_id = registration_id, user = user, type = device_type)
+                fcm_device = FCMDevice(registration_id = registration_id, user = user, type = device_type, active = True)
                 fcm_device.save()
             return Response(data={"detail":"success"}, status=200)
         except:
             raise ParseError
 
 class AlertView(APIView):
-    permission_classes = [permissions.IsAuthenticated,]
+    permission_classes = [permissions.IsAuthenticated, isVerified]
 
     def post(self, request, format = None):
 
@@ -273,7 +348,7 @@ class AlertView(APIView):
             for contact in trusted:
                 try:
                     usr = User.objects.get(phoneNumber = contact.trusted_phone)
-                    devices = FCMDevice.objects.get(user = usr)
+                    devices = FCMDevice.objects.filter(user = usr)
                     print(devices.registration_id)
                     devices.send_message(title='Medical Emergency', body = message)
                 except:

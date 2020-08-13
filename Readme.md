@@ -40,6 +40,9 @@ DATABASE_USER=mysql-database-username
 DATABASE_PASSWORD=mysql-database-password
 
 FCM_SERVER_KEY=fcmserverkey
+
+EMAIL_ID=email_id
+EMAIL_PASSWORD=email_password
 ```
 
 - Navigate back to the base directory for the app where <span>manage.py</span> file is located and make the database migrations using following command:

@@ -4,6 +4,9 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+from datetime import datetime, timedelta
+from django.utils import timezone
+
 class CustomUserManager(BaseUserManager):
     """
     Custom user model manager where email is the unique identifiers
@@ -100,7 +103,25 @@ class TrustedContact(models.Model):
     user = models.ForeignKey(
         User, 
         on_delete = models.CASCADE, 
-        related_name='trusted_contacts'
+        related_name='trusted_contacts',
         )
     trusted_name = models.CharField(max_length = 180)
-    trusted_phone = models.CharField(max_length = 15, unique = True)
+    trusted_phone = models.CharField(max_length = 15)
+
+    class Meta:
+        unique_together = ('user', 'trusted_phone')
+
+def get_expiry():
+        return timezone.now() + timedelta(minutes=10)
+
+class PasswordReset(models.Model):
+    user = models.ForeignKey(
+        User, 
+        on_delete = models.CASCADE,
+        )
+    OTP = models.CharField(max_length = 256)
+    num_attempts = models.IntegerField(default=3)
+    expiry = models.DateTimeField(default = get_expiry)
+
+    class Meta:
+        ordering = ['-expiry']

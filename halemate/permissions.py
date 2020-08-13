@@ -62,7 +62,7 @@ class hasAppointmentPermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        if request.method == 'DELETE' and (obj.status != 'P' or obj.status != 'R'):
+        if request.method == 'DELETE' and (obj.status != 'P' and obj.status != 'R'):
             return False
 
         if request.user.registered_as == 'U':
@@ -75,3 +75,24 @@ class hasAppointmentPermission(permissions.BasePermission):
             return True
 
         return False
+
+class isVerified(permissions.BasePermission):
+    """
+    Custom permission to allow access only to verified users
+    """
+
+    def has_permission(self, request, view):
+        if request.user.is_verified == True:
+            return True
+        return False
+
+class isUser(permissions.BasePermission):
+    """
+    Custom permission to allow access only to users registered as U
+    """
+
+    def has_permission(self, request, view):
+        if request.user.registered_as == 'U':
+            return True
+        else:
+            return False

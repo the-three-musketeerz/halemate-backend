@@ -17,6 +17,7 @@ django-cors-headers==3.4.0
 django-environ==0.4.5
 django-rest-knox==4.1.0
 djangorestframework==3.11.1
+fcm-django==0.3.4
 hiredis==1.1.0
 hyperlink==20.0.1
 idna==2.10
@@ -26,6 +27,7 @@ mysqlclient==2.0.1
 pyasn1==0.4.8
 pyasn1-modules==0.2.8
 pycparser==2.20
+pyfcm==1.4.7
 PyHamcrest==2.0.2
 pyOpenSSL==19.1.0
 pytz==2020.1

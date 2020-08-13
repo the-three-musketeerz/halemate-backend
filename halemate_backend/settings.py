@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'channels',
     'knox',
     'corsheaders',
+    'fcm_django',
 ]
 
 MIDDLEWARE = [
@@ -104,6 +105,11 @@ AUTH_USER_MODEL = 'halemate.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+}
+
+# FCM Settings
+FCM_DJANGO_SETTINGS = {
+    'FCM_SERVER_KEY':env("FCM_SERVER_KEY")
 }
 
 # knox settings

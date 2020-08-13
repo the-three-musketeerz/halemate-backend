@@ -18,6 +18,7 @@ from knox.views import LoginView as KnoxLoginView
 from knox.auth import TokenAuthentication
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from fcm_django.models import FCMDevice
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
@@ -230,5 +231,76 @@ class ChangePasswordView(APIView):
                 return Response(data = {"detail":"password changed successfully"})
             else:
                 return Response(data = {"detail":"old password did not match"}, status = 401)
+        except:
+            raise ParseError
+
+##########################################################
+# Alert + FCM
+
+class RegisterDeviceView(APIView):
+    permission_classes = [permissions.IsAuthenticated,]
+
+    def post(self, request, format = None):
+
+        try:
+            registration_id = request.data['registration_id']
+            device_type = 'android'
+            user = request.user
+            try:
+                device_type = request.data['type']
+            except:
+                pass
+            try:
+                fcm_device = FCMDevice.objects.get(registration_id = registration_id)
+                raise ParseError
+            except:
+                fcm_device = FCMDevice(registration_id = registration_id, user = user, type = device_type)
+                fcm_device.save()
+            return Response(data={"detail":"success"}, status=200)
+        except:
+            raise ParseError
+
+class AlertView(APIView):
+    permission_classes = [permissions.IsAuthenticated,]
+
+    def post(self, request, format = None):
+
+        try:
+            location = request.data['location']
+            user = request.user
+            trusted = user.trusted_contacts.all()
+            message = user.name + ' needs medical attention'
+            for contact in trusted:
+                try:
+                    usr = User.objects.get(phoneNumber = contact.trusted_phone)
+                    devices = FCMDevice.objects.get(user = usr)
+                    print(devices.registration_id)
+                    devices.send_message(title='Medical Emergency', body = message)
+                except:
+                    print("message not sent")
+                    pass
+            
+            try:
+                layer = get_channel_layer()
+                message = {
+                    'type':505,
+                    'message':"Medical Emergency",
+                    "location":location,
+                    "patient_name":user.name,
+                    "patient_contact":user.phoneNumber
+                }
+                hospitals = User.objects.filter(registered_as = 'H')
+                for hospital in hospitals:
+                    room_group_name = 'hospital_'+str(hospital.id)
+                    async_to_sync(layer.group_send)(
+                        room_group_name,
+                        {
+                            'type': 'notify',
+                            'message': json.dumps(message)
+                        }
+                    )
+            except:
+                pass
+            return Response(data={"detail":"success"}, status=200)
         except:
             raise ParseError

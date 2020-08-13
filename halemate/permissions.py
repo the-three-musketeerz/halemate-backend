@@ -62,7 +62,7 @@ class hasAppointmentPermission(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        if request.method == 'DELETE' and obj.status != 'P':
+        if request.method == 'DELETE' and (obj.status != 'P' or obj.status != 'R'):
             return False
 
         if request.user.registered_as == 'U':

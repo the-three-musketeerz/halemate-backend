@@ -24,6 +24,8 @@ from halemate_backend.settings import EMAIL_HOST_USER, SMS_AUTH
 import math, random, hashlib
 from django.utils import timezone
 from datetime import timedelta
+from .nearby_hospitals import *
+from googleplaces import GooglePlaces, types, lang 
 
 # Function to generate OTP
 def generateOTP() : 
@@ -531,5 +533,17 @@ class AlertView(APIView):
             except:
                 pass
             return Response(data={"detail":"success"}, status=200)
+        except:
+            raise ParseError
+
+class ReportAlertView(APIView):
+    permission_classes = [permissions.IsAuthenticated, isVerified]
+
+    def post(self, request, format = None):
+
+        try:
+            lat = request.data['location']['lat']
+            lng = request.data['location']['lng']
+            return Response(data=searchNearbyHospitals(lat,lng))
         except:
             raise ParseError

@@ -45,6 +45,8 @@ EMAIL_ID=email_id
 EMAIL_PASSWORD=email_password
 
 SMS_AUTH=sms-client-auth-token
+
+GOOGLE_MAPS_API_KEY=google_map_api_key
 ```
 
 - Navigate back to the base directory for the app where <span>manage.py</span> file is located and make the database migrations using following command:

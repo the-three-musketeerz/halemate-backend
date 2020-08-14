@@ -19,6 +19,7 @@ urlpatterns = [
     path('change_password/', views.ChangePasswordView.as_view(), name = 'change_password'),
     path('register_device/', views.RegisterDeviceView.as_view(), name = 'register_device'),
     path('alert/', views.AlertView.as_view(), name = 'alert'),
+    path('report_alert/', views.ReportAlertView.as_view(), name = 'report_alert'),
     path('forgot_password/', views.ForgotPasswordView.as_view(), name = 'forgot_password'),
     path('reset_password/', views.ResetPasswordView.as_view(), name = 'reset_password'),
     path('signup_verify/', views.SignupVerifyView.as_view(), name = 'signup_verify'),

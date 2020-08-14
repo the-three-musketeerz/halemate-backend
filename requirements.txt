@@ -30,6 +30,7 @@ pycparser==2.20
 pyfcm==1.4.7
 PyHamcrest==2.0.2
 pyOpenSSL==19.1.0
+python-google-places==1.4.1
 pytz==2020.1
 requests==2.24.0
 service-identity==18.1.0

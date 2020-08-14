@@ -30,4 +30,7 @@ def searchNearbyHospitals(lat, lng, radius = 5000, limit_search_count = 10):
         hospital['phoneNumber'] = place.local_phone_number 
         nearby_hospitals.append(hospital)
 
+    if(len(nearby_hospitals) == 0):
+        nearby_hospitals = searchNearbyHospitals(lat = lat, lng = lng, radius = radius+5000)
+
     return nearby_hospitals

@@ -25,7 +25,6 @@ import math, random, hashlib
 from django.utils import timezone
 from datetime import timedelta
 from .nearby_hospitals import *
-from googleplaces import GooglePlaces, types, lang 
 
 # Function to generate OTP
 def generateOTP() : 
@@ -544,6 +543,8 @@ class ReportAlertView(APIView):
         try:
             lat = request.data['location']['lat']
             lng = request.data['location']['lng']
-            return Response(data=searchNearbyHospitals(lat,lng))
+            hospitals = searchNearbyHospitals(lat,lng)
+            print(hospitals)
+            return Response(data=hospitals)
         except:
             raise ParseError

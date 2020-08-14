@@ -96,3 +96,12 @@ class isUser(permissions.BasePermission):
             return True
         else:
             return False
+
+class NoPost(permissions.BasePermission):
+    """
+    Custom permission to forbid POST request
+    """
+
+    def has_permission(self, request, view):
+        if request.method == 'POST':
+            return False

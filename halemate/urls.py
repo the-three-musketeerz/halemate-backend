@@ -21,4 +21,7 @@ urlpatterns = [
     path('alert/', views.AlertView.as_view(), name = 'alert'),
     path('forgot_password/', views.ForgotPasswordView.as_view(), name = 'forgot_password'),
     path('reset_password/', views.ResetPasswordView.as_view(), name = 'reset_password'),
+    path('signup_verify/', views.SignupVerifyView.as_view(), name = 'signup_verify'),
+    path('otp_verify/', views.OTPVerifyView.as_view(), name = 'otp_verify'),
+    path('otp_refresh/', views.OTPRefreshView.as_view(), name = 'otp_refresh'),
 ]

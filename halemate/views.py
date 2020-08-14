@@ -20,27 +20,28 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from fcm_django.models import FCMDevice
 from django.core.mail import send_mail
-from halemate_backend.settings import EMAIL_HOST_USER
+from halemate_backend.settings import EMAIL_HOST_USER, SMS_AUTH
 import math, random, hashlib
 from django.utils import timezone
+from datetime import timedelta
 
 # Function to generate OTP
 def generateOTP() : 
    
-    string = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    string = '0123456789'
     OTP = "" 
     length = len(string) 
     for i in range(6) : 
         OTP += string[math.floor(random.random() * length)] 
   
-    return OTP 
+    return OTP  
 
 ###############################################################
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'U')
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated, isVerified]
+    permission_classes = [permissions.IsAuthenticated, isVerified, NoPost]
 
     def get_queryset(self):
         return User.objects.filter(id = self.request.user.id).filter(registered_as = 'U')
@@ -56,7 +57,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class HospitalViewSet(viewsets.ModelViewSet):
     queryset = User.objects.filter(registered_as = 'H')
     serializer_class = HospitalSerializer
-    permission_classes = [permissions.IsAuthenticated, IsUserOrAdminOrReadOnly, isVerified]
+    permission_classes = [permissions.IsAuthenticated, IsUserOrAdminOrReadOnly, isVerified, NoPost]
 
     def list(self, request, *args, **kwargs):
         queryset = User.objects.filter(registered_as = 'H')
@@ -183,10 +184,6 @@ class SignupView(APIView):
             except:
                 pass
             try:
-                is_verified = request.data['is_verified']
-            except:
-                pass
-            try:
                 u = User.objects.get(email = email)
                 return Response(data = {"detail":"Email-id already exists"}, status = 400)
             except User.DoesNotExist:
@@ -217,17 +214,8 @@ class SignupView(APIView):
                 medical_history = user_data['medical_history'],
                 is_verified = user_data['is_verified']
             )
-            if(is_verified == False):
-                serializer = UserSerializer(user)
-                return Response(data = serializer.data)
-            else:
-                login_data = {'username':email, 'password':password}
-                login_response = requests.post('http://localhost:8000'+reverse('knox_login'), data = login_data)
-                if login_response.status_code == 200:
-                    login_response = login_response.json()
-                    return Response(login_response)
-                else:
-                    return Response(data = {"detail":"Unable to login"}, status = login_response.status_code)
+            serializer = UserSerializer(user)
+            return Response(data = serializer.data)
 
         except:
             raise ParseError
@@ -309,6 +297,155 @@ class ResetPasswordView(APIView):
         except:
             raise ParseError
 
+class SignupVerifyView(APIView):
+    permission_classes = [permissions.AllowAny,]
+
+    def post(self, request, format = None):
+
+        try:
+            email = request.data['email']
+            verification_method = request.data['verification_method']
+            usr = User.objects.get(email = email)
+            if usr.is_verified:
+                return Response(data={"detail":"user already verified"}, status=400)
+            OTP = generateOTP()
+            msg = 'Your OTP for halemate verification is '+OTP+' .This OTP is valid for 10 minutes.'
+
+            if verification_method == 'M':
+                phone = usr.phoneNumber
+                url = "https://www.fast2sms.com/dev/bulk"
+                querystring = {
+                    "authorization": SMS_AUTH,
+                    "sender_id": "FSTSMS",
+                    "message": msg,
+                    "language": "english",
+                    "route": "p",
+                    "numbers": phone,
+                }
+
+                headers = {"cache-control": "no-cache"}
+
+                response = requests.request("GET", url, headers=headers, params=querystring)
+                if response.status_code == 200:
+                    OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+                    p = PasswordReset(user = usr, OTP = OTP_hash)
+                    p.save()
+                    return Response(data={"detail":"OTP sent successfully"}, status=200)
+                else:
+                    return Response(data={"detail":"Unable to send OTP"}, status=500)
+                
+            else:
+                send_mail(
+                    'Halemate password change OTP',
+                    msg,
+                    EMAIL_HOST_USER,
+                    [email],
+                    fail_silently=False
+                )
+                OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+                p = PasswordReset(user = usr, OTP = OTP_hash)
+                p.save()
+                return Response(data={"status":"OTP sent successfully","email":email}, status=200)
+
+        except:
+            raise ParseError
+
+class OTPVerifyView(APIView):
+    permission_classes = [permissions.AllowAny,]
+
+    def post(self, request, format = None):
+        try:
+            email = request.data['email']
+            usr = User.objects.get(email = email)
+            if usr.is_verified:
+                return Response(data={"detail":"user already verified"}, status=400)
+            OTP = request.data['OTP']
+            OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+            pswrdrst = PasswordReset.objects.filter(user = usr).first()
+            if pswrdrst.num_attempts > 0 and pswrdrst.expiry > timezone.now():
+                if OTP_hash == pswrdrst.OTP:
+                    usr.is_verified = True
+                    usr.save()
+                    pswrdrst.delete()
+                    return Response(data={"detail":"success"}, status=200)
+                else:
+                    pswrdrst.num_attempts -= 1
+                    pswrdrst.save()
+                    if pswrdrst.num_attempts == 0:
+                        pswrdrst.delete()
+                        usr.delete()
+                        return Response(data={"detail":"No. of invalid attempts exceeded","num_attemps":0}, status=409)
+                    else:
+                        return Response(data={"detail":"Invalid OTP","num_attemps":pswrdrst.num_attempts}, status=409)
+            else:
+                pswrdrst.delete()
+                usr.delete()
+                return Response(data={"detail":"OTP Expired","num_attemps":0}, status=409)
+
+        except:
+            raise ParseError
+
+class OTPRefreshView(APIView):
+    permission_classes = [permissions.AllowAny,]
+    def post(self, request, format = None):
+        try:
+            email = request.data['email']
+            verification_method = request.data['verification_method']
+            usr = User.objects.get(email = email)
+            if usr.is_verified:
+                return Response(data={"detail":"user already verified"}, status=400)
+            p = PasswordReset.objects.filter(user = usr).first()
+            if p:
+                if p.num_attempts < 1:
+                    usr.delete()
+                    p.delete()
+                    return Response(data={"detail":"too many wrong attempts"}, status=400)
+                OTP = generateOTP()
+                msg = 'Your OTP for halemate verification is '+OTP+' .This OTP is valid for 10 minutes.'
+                if verification_method == 'M':
+                    phone = usr.phoneNumber
+                    url = "https://www.fast2sms.com/dev/bulk"
+                    querystring = {
+                        "authorization": SMS_AUTH,
+                        "sender_id": "FSTSMS",
+                        "message": msg,
+                        "language": "english",
+                        "route": "p",
+                        "numbers": phone,
+                    }
+
+                    headers = {"cache-control": "no-cache"}
+
+                    response = requests.request("GET", url, headers=headers, params=querystring)
+                    if response.status_code == 200:
+                        OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+                        p.OTP = OTP_hash
+                        p.expiry = timezone.now() + timedelta(minutes=10)
+                        p.save()
+                        return Response(data={"detail":"OTP sent successfully"}, status=200)
+                    else:
+                        return Response(data={"detail":"Unable to send OTP"}, status=500)
+                    
+                else:
+                    send_mail(
+                        'Halemate password change OTP',
+                        msg,
+                        EMAIL_HOST_USER,
+                        [email],
+                        fail_silently=False
+                    )
+                    OTP_hash = hashlib.sha256(OTP.encode()).hexdigest()
+                    p.OTP = OTP_hash
+                    p.expiry = timezone.now() + timedelta(minutes=10)
+                    p.save()
+                    return Response(data={"status":"OTP sent successfully","email":email}, status=200)
+            else:
+                usr.delete()
+                raise ParseError
+
+        except:
+            raise ParseError
+
 ##########################################################
 # Alert + FCM
 
@@ -352,8 +489,25 @@ class AlertView(APIView):
                     print(devices.registration_id)
                     devices.send_message(title='Medical Emergency', body = message)
                 except:
-                    print("message not sent")
                     pass
+
+            contacts_tuple = tuple(map(lambda x:x.trusted_phone, trusted))
+            contacts_string = ",".join(contacts_tuple)
+
+            url = "https://www.fast2sms.com/dev/bulk"
+            querystring = {
+                "authorization": SMS_AUTH,
+                "sender_id": "FSTSMS",
+                "message": message,
+                "language": "english",
+                "route": "p",
+                "numbers": contacts_string,
+            }
+
+            headers = {"cache-control": "no-cache"}
+
+            response = requests.request("GET", url, headers=headers, params=querystring)
+            print(response.status_code)
             
             try:
                 layer = get_channel_layer()

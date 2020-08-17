@@ -99,6 +99,9 @@ class Appointment(models.Model):
     appointment_time = models.DateTimeField(null = True)
     status = models.CharField(max_length = 20, default = 'P')
 
+    class Meta:
+        ordering = ['-appointment_made_time']
+
 class TrustedContact(models.Model):
     user = models.ForeignKey(
         User, 

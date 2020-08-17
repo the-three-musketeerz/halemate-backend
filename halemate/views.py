@@ -479,7 +479,8 @@ class AlertView(APIView):
     def post(self, request, format = None):
 
         try:
-            location = request.data['location']
+            lat = request.data['lat']
+            lng = request.data['lng']
             user = request.user
             trusted = user.trusted_contacts.all()
             message = user.name + ' needs medical attention'
@@ -515,7 +516,8 @@ class AlertView(APIView):
                 message = {
                     'type':505,
                     'message':"Medical Emergency",
-                    "location":location,
+                    "lat":lat,
+                    "lng":lng,
                     "patient_name":user.name,
                     "patient_contact":user.phoneNumber
                 }
@@ -541,10 +543,9 @@ class ReportAlertView(APIView):
     def post(self, request, format = None):
 
         try:
-            lat = request.data['location']['lat']
-            lng = request.data['location']['lng']
+            lat = request.data['lat']
+            lng = request.data['lng']
             hospitals = searchNearbyHospitals(lat,lng)
-            print(hospitals)
             return Response(data=hospitals)
         except:
             raise ParseError

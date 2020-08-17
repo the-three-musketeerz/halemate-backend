@@ -105,3 +105,4 @@ class NoPost(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method == 'POST':
             return False
+        return True

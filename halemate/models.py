@@ -104,6 +104,7 @@ class TrustedContact(models.Model):
         User, 
         on_delete = models.CASCADE, 
         related_name='trusted_contacts',
+        blank = True
         )
     trusted_name = models.CharField(max_length = 180)
     trusted_phone = models.CharField(max_length = 15)

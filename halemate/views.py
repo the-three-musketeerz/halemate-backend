@@ -505,7 +505,7 @@ class AlertView(APIView):
                     print(devices.registration_id)
                     devices.send_message(title='Medical Emergency', body = message)
                 except:
-                    pass
+                    continue
 
             contacts_tuple = tuple(map(lambda x:x.trusted_phone, trusted))
             contacts_string = ",".join(contacts_tuple)

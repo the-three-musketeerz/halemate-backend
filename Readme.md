@@ -1,5 +1,8 @@
 # haleMate
 
+## More details about the project
+   - [Google Drive link for the submission]https://drive.google.com/drive/folders/112dqU8nh0RJIK0kS2XQV4TfK0DIGZEzX
+    
 ## Setup
 - Prerequisites:
   - Python 3

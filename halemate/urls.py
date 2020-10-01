@@ -1,17 +1,21 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from . import views
+from halemate.views.alert import AlertView, ReportAlertView
+from halemate.views.appointment import AppointmentViewSet
+from halemate.views.doctor import DoctorViewSet
+from halemate.views.fcm import RegisterDeviceView
+from halemate.views.trusted_contact import TrustedContactViewSet
 
 router = DefaultRouter()
-router.register(r'doctor', views.DoctorViewSet)
+router.register(r'doctor', DoctorViewSet)
 router.register(
     r'appointment',
-    views.AppointmentViewSet,
+    AppointmentViewSet,
     basename='appointment'
 )
 router.register(
     r'trusted_contact',
-    views.TrustedContactViewSet,
+    TrustedContactViewSet,
     basename='trusted_contact'
 )
 
@@ -22,16 +26,16 @@ urlpatterns = [
     ),
     path(
         'register_device/',
-        views.RegisterDeviceView.as_view(),
+        RegisterDeviceView.as_view(),
         name='register_device'
     ),
     path(
         'alert/',
-        views.AlertView.as_view(),
+        AlertView.as_view(),
         name='alert'
     ),
     path(
         'report_alert/',
-        views.ReportAlertView.as_view(),
+        ReportAlertView.as_view(),
         name='report_alert'),
 ]

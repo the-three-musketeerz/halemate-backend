@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    path('halemate/', include('halemate_auth.urls')),
     path('halemate/', include('halemate.urls')),
     path('admin/', admin.site.urls),
 ]

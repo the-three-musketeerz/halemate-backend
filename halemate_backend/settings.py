@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['10.0.2.2','127.0.0.1']
 
 INSTALLED_APPS = [
     'halemate.apps.HalemateConfig',
+    'halemate_auth.apps.HalemateAuthConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -107,7 +108,7 @@ DATABASES = {
 
 # Authentication
 
-AUTH_USER_MODEL = 'halemate.User'
+AUTH_USER_MODEL = 'halemate_auth.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
